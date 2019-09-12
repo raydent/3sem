@@ -5,17 +5,23 @@
 char** split(char* string, char symbol, int* wordnum);
 
 int main(){
-  char* mystring = "Mama mila ramu";
+  char* mystring = "mama mila ramu";
   int wordnum = 0;
   char** stringArr = split(mystring, 'm', &wordnum);
   for(int i = 0; i < wordnum; i++){
     printf("%s\n", stringArr[i]);
+    free(stringArr[i]);
   }
+  free(stringArr);
 }
 
 char** split(char* string, char symbol, int* wordnum){
   char* symbolToString = (char*) calloc (1, sizeof(char));
   symbolToString[0] = symbol;
+  while(string[0] == symbol){
+    string++;
+  }
+  printf("%s\n", string);
   int count = 0;
   char* tempstring = string;
   while(strstr(tempstring, symbolToString)){
