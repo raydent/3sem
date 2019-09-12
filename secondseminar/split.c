@@ -2,52 +2,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-char** split(char* string, char symbol, int* wordnum);
-
+char** Split(char* string, char* delimiters, int* tokensCount);
 int main(){
-  char* mystring = "mama mila ramu";
-  int wordnum = 0;
-  char** stringArr = split(mystring, 'm', &wordnum);
-  for(int i = 0; i < wordnum; i++){
-    printf("%s\n", stringArr[i]);
-    free(stringArr[i]);
-  }
-  free(stringArr);
-}
-
-char** split(char* string, char symbol, int* wordnum){
-  char* symbolToString = (char*) calloc (1, sizeof(char));
-  symbolToString[0] = symbol;
-  while(string[0] == symbol){
-    string++;
-  }
-  printf("%s\n", string);
-  int count = 0;
-  char* tempstring = string;
-  while(strstr(tempstring, symbolToString)){
-    tempstring = strstr(tempstring, symbolToString);
-    if (tempstring - string >= strlen(string)){
-      break;
+  char** tokens = NULL;
+  int tokensCount = 0;
+  char* string = (char*) calloc (100, sizeof(char));
+  strcpy(string, "Mama mila ramy, da");
+  tokens = Split(string, " , ", &tokensCount);
+  for(int i = 0; i < tokensCount; i++){
+    if (tokens[i] != NULL){
+      printf("%s\n", tokens[i]);
     }
-    count++;
-    tempstring++;
   }
-  printf("%d\n", count);
-  char** stringarr = (char**) calloc (count + 1, sizeof(char*));
-  char* curpoint = string;
-  tempstring = string;
-  for (int i = 0; i < count; i++){
-    tempstring = strstr(curpoint, symbolToString) + 1;
-    stringarr[i] = (char*) calloc (tempstring - curpoint - 1, sizeof(char));
-    strncpy(stringarr[i], curpoint, tempstring - curpoint - 1);
-    curpoint = tempstring;
+}
+char** Split(char* string, char* delimiters, int* tokensCount){
+  int count = 10;
+  char** tokens = (char**) calloc (count, sizeof(char*));
+  printf("0\n");
+  char *substring = strtok (string, delimiters);
+  tokens[0] = substring;
+  if (tokens[0] == NULL){
+    return tokens;
   }
-  if(curpoint - string != strlen (string)){
-    stringarr[count] = (char*) calloc (strlen(string) - (tempstring - string), sizeof(char));
-    strncpy(stringarr[count], curpoint, strlen(string) - (tempstring - string));
+  *tokensCount += 1;
+  while(substring != NULL){
+    printf("1\n");
+    substring = strtok(NULL, delimiters);
+    tokens[*tokensCount] = substring;
+    *tokensCount += 1;
+    if(*tokensCount == count - 1){
+      count *= 2;
+      tokens = realloc(tokens, count * (sizeof(char*)));
+    }
   }
-  *wordnum = count + 1;
-  // free(tempstring);
-  // free(curpoint);
-  return stringarr;
+  return tokens;
 }
