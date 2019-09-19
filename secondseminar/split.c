@@ -14,6 +14,7 @@ int main(){
       printf("%s\n", tokens[i]);
     }
   }
+  free(string);
 }
 char** Split(char* string, char* delimiters, int* tokensCount){
   int count = 10;
