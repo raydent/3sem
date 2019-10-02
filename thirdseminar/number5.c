@@ -4,12 +4,14 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <time.h>
+
 const int N = 100;
 
 typedef struct mystruct {
     char* commandline;
     char** args;
-    int killtime;
+    int waittime;
     int argnum;
 }container_t;
 
@@ -18,6 +20,7 @@ char** makeargarr(char* string);
 container_t* fillcontainer(int stringnum , FILE* f);
 
 int main(){
+    time_t t = time(NULL);
     int stringnum = 0;
     FILE* f = fopen("source.txt", "r");
     fscanf(f, "%d", &stringnum);
@@ -29,12 +32,23 @@ int main(){
     for(int i = 0; i < stringnum - 1; i++){
         frk = fork();
         if (frk == 0){
+            sleep(container[i].waittime);
+            if (abs(time(NULL) - t) > 5){
+                printf("process number %d was terminated\n", i);
+                kill(getpid(), SIGKILL);
+            }
             execvp(container[i].args[1], container[i].args + 1);
         }
     }
     for(int i = 0; i <= container[stringnum - 1].argnum; i++){
     }
     if (frk > 0){
+        wait(NULL);
+        sleep(container[stringnum - 1].waittime);
+        if (abs(time(NULL) - t) > 5){
+            printf("process number %d was terminated\n", stringnum);
+            kill(getpid(), SIGKILL);
+        }
         execvp(container[stringnum - 1].args[1], container[stringnum - 1].args + 1);
     }
     fclose(f);
@@ -80,7 +94,7 @@ container_t* fillcontainer(int stringnum , FILE* f){
         fgets(container[i].commandline, N, f);
         container[i].args = makeargarr(container[i].commandline);
         container[i].argnum = getargnum(container[i].commandline);
-        container[i].killtime = (int)(container[i].commandline[0] - '0');
+        container[i].waittime = (int)(container[i].commandline[0] - '0');
     }
     return container;
 }
