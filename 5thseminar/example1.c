@@ -17,9 +17,8 @@ int main(int argc, char** argv){
     char name01[]="aaaa.fifo";
     char name10[] = "aaa.fifo";
     (void)umask(0);
-    if(mknod(name01, S_IFIFO | 0666, 0) < 0);
-    int hh = mknod(name10, S_IFIFO | 0666, 0);
-    printf("hh = %d\n", hh);
+    mknod(name01, S_IFIFO | 0666, 0);
+    mknod(name10, S_IFIFO | 0666, 0);
     if (strcmp(argv[1], "0") == 0){
         chatting(name10, name01, fd);
     }
@@ -28,6 +27,7 @@ int main(int argc, char** argv){
     }
     return 0;
 }
+
 void chatting(char* nametoread, char* nametowrite, int fd){
     int frk = fork();
     while(1){
