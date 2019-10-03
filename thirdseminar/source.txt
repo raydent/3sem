@@ -1,0 +1,4 @@
+3
+1 sl ls
+1 gcc main.c -o mypr
+2 gcc 1.c -o itworks
