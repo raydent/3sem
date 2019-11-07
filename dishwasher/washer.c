@@ -1,61 +1,101 @@
 
 #include "makearr.h"
 const int CAPACITY = 5;
-void senddish(pair pair_, FILE* table, int infosize, pair* infoarr, struct sembuf mybuf10, int semid1);
+#define LAST_MESSAGE 255
 int main(){
-    int semid1, semid2;
-    char pathname1[] = "key1";
-    key_t key1;
-    struct sembuf mybuf10;
-    key1 = ftok(pathname1,0);
-    semid1 = semget(key1, 1, 0666 | IPC_CREAT);
 
-    char pathname2[] = "key2";
-    key_t key2;
-    struct sembuf mybuf01;
-    key2 = ftok(pathname2,0);
-    semid2 = semget(key2, 1, 0666 | IPC_CREAT);
+    int   semid;
+    char sempathname[]="washer.c";
+    key_t semkey;
+    //semctl(semid, 0, SETVAL, 0);
+    struct sembuf sembuf;
+    semkey = ftok(sempathname, 0);
+    // semctl (semid, 0, IPC_RMID, 0);
+    if((semid = semget(semkey, 1, 0666 | IPC_CREAT)) < 0){
+      printf("Can\'t create semaphore set\n");
+      exit(-1);
+    }
+    sembuf.sem_num = 0;
+    sembuf.sem_op  = -1;
+    semop(semid, &sembuf, 1);
+
+    for(int i = 0; i < CAPACITY; ++i){
+        sembuf.sem_num = 0;
+        sembuf.sem_op  = +1;
+        semop(semid, &sembuf, 1);
+    }
+    // sembuf.sem_op  = -1;
+    // semop(semid, &sembuf, 1);
+    //semctl (semid, 0, IPC_RMID, 0);
+    int infoarrsize = 0;
+    int sourcearrsize = 0;
+    int washerdatasize = 0;
+    int wiperdatasize = 0;
     FILE* source = fopen("source.dat", "r");
     FILE* washerdata = fopen("washerdata.dat", "r");
-    FILE* table = fopen("table.txt", "w");
-    int infosize = 0;
-    int sourcesize = 0;
-    pair* infoarr = make_washer_arr(washerdata, &infosize);
-    pair* sourcearr = make_washer_arr(source, &sourcesize);
-    printf("%s %d\n", infoarr[0].string, infoarr[0].num);
-    mybuf10.sem_num = 0;
-    mybuf10.sem_op = -1;
-    semop(semid1, &mybuf10, 1);
-    printf("goim");
-    int n = CAPACITY;
-    printf("n = %d", n);
-    while(n > 0){
-        n--;
-        mybuf10.sem_num = 0;
-        mybuf10.sem_op = 1;
-        semop(semid1, &mybuf10, 1);
+    FILE* wiperdata = fopen("wiperdata.dat", "r");
+    //FILE* table = fopen("table.txt", "w");
+    pair* sourcearr =  make_washer_arr(source, &sourcearrsize);
+    pair* washerdataarr =  make_washer_arr(washerdata, &washerdatasize);
+    pair* wiperdataarr = make_washer_arr(wiperdata, &wiperdatasize);
+    int maxlen = 100;
+    int msqid;
+    char pathname[]="buf";
+    int key;
+    int len = 50;
+    int n = 0;
+    struct mymsgbuf
+    {
+       long mtype;
+       int time;
+    } mybuf;
+    key = ftok(pathname, 0);
+    if ((msqid = msgget(key, 0666 | IPC_CREAT)) < 0){
+       printf("Can\'t get msqid\n");
+       exit(-1);
     }
-    mybuf01.sem_num = 0;
-    mybuf01.sem_op = 1;
-    semop(semid2, &mybuf01, 1);
-    for(int i = 0; i < sourcesize; i++){
-        senddish(sourcearr[i], table, infosize, infoarr, mybuf10, semid1);
-    }
-}
-void senddish(pair pair_, FILE* table, int infosize, pair* infoarr, struct sembuf mybuf10, int semid1){
-    int time = 0;
-    for(int i = 0; i < infosize; ++i){
-        if (strcmp(pair_.string, infoarr[i].string) == 0){
-            time = infoarr[i].num;
-            break;
+    mybuf.mtype = 1;
+    printf("start\n");
+    for(int i = 0; i < sourcearrsize; ++i){
+        //mybuf.string =(char*) calloc (50, sizeof(char));
+        //strcpy(mybuf.string, sourcearr[i].string);
+        int time = 0;
+        int wipertime = 0;
+        for(int j = 0; j < washerdatasize; ++j){
+            if (strcmp(sourcearr[i].string, washerdataarr[j].string) == 0){
+                printf("found\n");
+                time = washerdataarr[j].num;
+                break;
+            }
+        }
+        for(int j = 0; j < wiperdatasize; ++j){
+            if (strcmp(sourcearr[i].string, wiperdataarr[j].string) == 0){
+                printf("found2\n");
+                printf("wipertime = %d\n", wiperdataarr[j].num);
+                wipertime = wiperdataarr[j].num;
+                break;
+            }
+        }
+        mybuf.time = wipertime;
+        for(int k = 0; k < sourcearr[i].num; ++k){
+            sembuf.sem_op  = -1;
+            semop(semid, &sembuf, 1);
+            sleep(time);
+            if (msgsnd(msqid, (struct msgbuf *) &mybuf, len, 0) < 0){
+                printf("Can\'t send message to queue\n");
+                msgctl(msqid, IPC_RMID, (struct msqid_ds *) NULL);
+                exit(-1);
+            }
+            printf("sent\n");
+            //sembuf.sem_num = 0;
         }
     }
-    for(int i = 0; i < pair_.num; ++i){
-        //sleep(time);
-        //fwrite(pair_.string, sizeof(char), strlen(pair_.string), table);
-        fprintf(table, "%s\n", pair_.string);
-        mybuf10.sem_num = 0;
-        mybuf10.sem_op = -1;
-        semop(semid1, &mybuf10, 1);
+    mybuf.mtype = LAST_MESSAGE;
+    //msgctl(msqid, IPC_RMID, (struct msqid_ds *)NULL);
+    if (msgsnd(msqid, (struct msgbuf *) &mybuf, len, 0) < 0){
+        printf("Can\'t send message to queue\n");
+        msgctl(msqid, IPC_RMID, (struct msqid_ds *) NULL);
+        exit(-1);
     }
+    semctl (semid, 0, IPC_RMID, 0);
 }

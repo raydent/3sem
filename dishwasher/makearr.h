@@ -1,11 +1,18 @@
 #pragma once
 #include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/sem.h>
+#include <sys/msg.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <pthread.h>
+#include <fcntl.h>
+#include <sys/sem.h>
+
 typedef struct pair{
     int num;
     char* string;
