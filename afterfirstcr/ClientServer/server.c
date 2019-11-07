@@ -16,7 +16,7 @@ typedef struct pair{
 }pair_t;
 #define LAST_MESSAGE 255
 int main(){
-    int N = 5;
+    const int N = 5;
     int maxlen = 100;
     int msqid;
     char pathname[]="buf";
@@ -34,6 +34,12 @@ int main(){
        exit(-1);
     }
     int n1 = 0;
+    int tempN = N;
+    int fork_ = 10;
+    for(int i = 0; i < 5; i++){
+        if (fork_ != 0)
+            fork_ = fork();
+    }
     while (1) {
 
        maxlen = 100;
@@ -46,13 +52,15 @@ int main(){
           msgctl(msqid, IPC_RMID, (struct msqid_ds *)NULL);
           exit(0);
        }
-       int fork_ = fork();
-       if (fork != 0){
-           N--;
-           if (N == 0)
-            wait(NULL);
-       }
-       if (fork_ == 0){
+       // int fork_ = fork();
+       // if (fork != 0){
+       //     tempN--;
+       //     if (tempN == 0){
+       //      wait(NULL);
+       //      //tempN = N;
+       //      }
+       // }
+       // if (fork_ == 0){
            sleep(1);
            mybuf.mtype = mybuf.pair.id;
            mybuf.pair.res = mybuf.pair.a * mybuf.pair.b;
@@ -62,8 +70,9 @@ int main(){
               exit(-1);
            }
            printf("message type = %ld, a = %d, b = %d, res = %d\n", mybuf.mtype, mybuf.pair.a, mybuf.pair.b, mybuf.pair.res);
-           exit(0);
-       }
+          // tempN++;
+          // exit(0);
+       //}
     }
 
     return 0;
