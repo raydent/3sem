@@ -33,29 +33,23 @@ void copyfiles(char* target_dir_path, char* source_dir_path){
         strcat(name, "/");
         strcat(name, temp -> d_name);
         if (strcmp(temp -> d_name, ".") != 0 && strcmp(temp -> d_name, "..") != 0){
-            printf("name = %s\n", name);
             stat(name, &buf);
             strcpy(targetname, target_dir_path);
             strcat(targetname, "/");
             strcat(targetname, temp -> d_name);
             if (S_ISREG(buf . st_mode)){
-                printf("targetname = %s\n", targetname);
                 FILE* sourcefile = fopen(name, "r");
                 fseek(sourcefile, 0L, SEEK_END);
                 int sz = ftell(sourcefile);
                 rewind(sourcefile);
-                printf("sz = %d\n", sz);
                 char* file_content = (char*) calloc (sz, sizeof(char));
                 fread(file_content, sizeof(char), sz, sourcefile);
-                printf("file_content = %s\n", file_content);
                 FILE* targetfile = fopen(targetname, "w");
                 fwrite(file_content, sizeof(char), sz, targetfile);
                 fclose(targetfile);
                 fclose(sourcefile);
-                printf("Success\n");
             }
             if (S_ISDIR(buf . st_mode)){
-                printf("targetname = %s, name = %s\n", targetname, name);
                 mkdir(targetname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
                 copyfiles(targetname, name);
             }
