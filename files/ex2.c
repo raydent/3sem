@@ -17,15 +17,22 @@
 
 char* searching(int* n, char* curpath, char* search_name);
 
-int main(int argc, char *argv[]){
-    
+int main(int argc, char *argv[]){ // первым аргументом подаем название файла, который ищем, вторым - глубину поиска
+    if (argc != 3){
+        printf("wrong number of command line args, need %d more of them\n", 3 - argc);
+        exit(0);
+    }
     DIR* curdir = opendir("..");
     int count = 0;
     struct dirent *temp = readdir(curdir);
     struct stat buf;
-    char* search_name = "2";
-    int n = 2;
-    char* name = searching(&n, "..", search_name);
+    char* search_name = argv[1];
+    int n = 0;
+    for(int i = 0; i < strlen(argv[2]); i++){
+        n = argv[2][i] - '0';
+    }
+    //int n = 2;
+    char* name = searching(&n, ".", search_name);
     printf("name = %s\n", name);
 }
 
