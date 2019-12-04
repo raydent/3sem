@@ -69,7 +69,6 @@ int main()
 		close(mysockfd.sockfd);
 		exit(1);
 	}
-	//int i = 0;
 	while (1) 
 	{
 		pthread_t thid;
@@ -81,9 +80,6 @@ int main()
 		}
 		newsockets[clientnum] = mysockfd.newsockfd;
 		clientnum++;
-		//newsockets[i] = mysockfd.newsockfd;
 		pthread_create(&thid, (pthread_attr_t*)NULL, Process, &mysockfd);
-		//i++;
-		//close(mysockfd.newsockfd);
 	}
 }
