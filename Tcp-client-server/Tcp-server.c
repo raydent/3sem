@@ -7,72 +7,83 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-char** names;
-void main(){
-	names = (char**) calloc (100, sizeof(char*));
-	for(int i = 0; i < 100; i++)
+#include <pthread.h>
+
+
+int* newsockets;
+int clientnum;
+
+struct mysocket
+{
+	int sockfd;
+	int newsockfd;
+} mysockfd;
+
+void* Process(void* my_socket) 
+{
+	struct mysocket mysockfd = *(struct mysocket*)my_socket;
+	char line[1000];
+	int n;
+	while ((n = read(mysockfd.newsockfd, line, 999)) > 0)
 	{
-		names[i] = (char*) calloc (100, sizeof(char));	
+		for (int i = 0; i < clientnum; ++i) 
+		{
+			if (newsockets[i] != mysockfd.newsockfd)
+			{
+				if ((n = write(newsockets[i], line, strlen(line) + 1)) < 0)
+				{
+					perror(NULL);
+					close(mysockfd.sockfd);
+					close(mysockfd.newsockfd);
+					exit(1);
+				}
+			}
+		}
 	}
-	int sockfd, newsockfd; /* Дескрипторы для слушающего и присоединенного сокетов */
-	int clilen; /* Длина адреса клиента */
-	int n; /* Количество принятых символов */
-	char line[1000]; /* Буфер для приема информации */
-	struct sockaddr_in servaddr, cliaddr; /* Структуры для размещения полных адресов сервера и клиента */
-	/* Создаем TCP-сокет */
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
+}
+
+int main()
+{
+	clientnum = 0;
+	newsockets = malloc(1000 * sizeof(int));
+	int clilen;
+	int n; 
+	char line[1000];
+	struct sockaddr_in servaddr, cliaddr; 
+	if ((mysockfd.sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror(NULL);
 		exit(1);
 	}
 	bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family= AF_INET;
-	servaddr.sin_port= htons(51000);
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(51000);
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-/* Настраиваем адрес сокета */
-	if(bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
-	{
+	if (bind(mysockfd.sockfd, (struct sockaddr*) & servaddr,
+		sizeof(servaddr)) < 0) {
 		perror(NULL);
-		close(sockfd);
+		close(mysockfd.sockfd);
 		exit(1);
-	}/* Переводим созданный сокет в пассивное (слушающее)состояние. Глубину очереди для установленных соединений описываем значением 5 */
-	if(listen(sockfd, 5) < 0)
-	{
+	}
+	if (listen(mysockfd.sockfd, 5) < 0) {
 		perror(NULL);
-		close(sockfd);
+		close(mysockfd.sockfd);
 		exit(1);
-	}/* Основной цикл сервера */
-	while(1)
+	}
+	//int i = 0;
+	while (1) 
 	{
-	/* В переменную clilen заносим максимальнуюдлину ожидаемого адреса клиента */
+		pthread_t thid;
 		clilen = sizeof(cliaddr);
-	/* Ожидаем полностью установленного соединенияна слушающем сокете. При нормальном завершенииу нас в структуре cliaddr будет лежать полныйадрес клиента, установившего соединение, а впеременной clilen – его фактическая длина. Вызовже вернет дескриптор присоединенного сокета,через который будет происходить общение с клиентом.Заметим, что информация о клиенте унас в дальнейшем никак не используется, поэтомувместо второго и третьего параметров можно былопоставить значения NULL. */
-		if((newsockfd = accept(sockfd, (struct sockaddr *) &cliaddr, &clilen)) < 0)
-		{
+		if ((mysockfd.newsockfd = accept(mysockfd.sockfd, (struct sockaddr*) & cliaddr, &clilen)) < 0) {
 			perror(NULL);
-			close(sockfd);
+			close(mysockfd.sockfd);
 			exit(1);
 		}
-	/* В цикле принимаем информацию от клиента дотех пор, пока не произойдет ошибки (вызов read()вернет отрицательное значение) или клиент не закроет соединение (вызов read() вернет значение0). Максимальную длину одной порции данных отклиента ограничим 999 символами. В операцияхчтения и записи пользуемся дескриптором присоединенного сокета, т. е. значением, котороевернул вызов accept().*/
-		while((n = read(newsockfd, line, 999)) > 0)
-		{
-		/* Принятые данные отправляем обратно */
-			if((n = write(newsockfd, line, strlen(line)+1)) < 0)
-			{
-				perror(NULL);
-				close(sockfd);
-				close(newsockfd);
-				exit(1);
-			}
-		}
-		/* Если при чтении возникла ошибка – завершаем работу */
-		if(n < 0)
-		{
-			perror(NULL);
-			close(sockfd);
-			close(newsockfd);
-			exit(1);
-		}/* Закрываем дескриптор присоединенного сокетаи уходим ожидать нового соединения */
-		close(newsockfd);
-		}
+		newsockets[clientnum] = mysockfd.newsockfd;
+		clientnum++;
+		//newsockets[i] = mysockfd.newsockfd;
+		pthread_create(&thid, (pthread_attr_t*)NULL, Process, &mysockfd);
+		//i++;
+		//close(mysockfd.newsockfd);
+	}
 }
