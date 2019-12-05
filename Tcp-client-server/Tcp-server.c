@@ -13,15 +13,15 @@
 int* newsockets;
 int clientnum;
 
-struct mysocket
+typedef struct mysocket
 {
 	int sockfd;
 	int newsockfd;
-} mysockfd;
+} mysockfd_t;
 
 void* Process(void* my_socket) 
 {
-	struct mysocket mysockfd = *(struct mysocket*)my_socket;
+	mysockfd_t mysockfd = *(mysockfd_t*)my_socket;
 	char line[1000];
 	int n;
 	while ((n = read(mysockfd.newsockfd, line, 999)) > 0)
@@ -44,8 +44,9 @@ void* Process(void* my_socket)
 
 int main()
 {
+	mysockfd_t mysockfd;
 	clientnum = 0;
-	newsockets = malloc(1000 * sizeof(int));
+	newsockets = calloc(1000, sizeof(int));
 	int clilen;
 	int n; 
 	char line[1000];
