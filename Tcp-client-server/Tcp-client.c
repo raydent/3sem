@@ -23,7 +23,7 @@ void* Reading(void* socket)
 	while (1) 
 	{
 		char recvline[1000];
-		if ((n = read(sockfd, recvline, 999)) < 0)
+		if ((n = read(sockfd, recvline, 999)) <= 0)
 		{
 			perror("Can\'t read\n");
 			close(sockfd);
