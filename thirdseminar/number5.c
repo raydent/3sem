@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <stdlib.h>
 #include <sys/wait.h>
 #include <string.h>
 #include <time.h>
@@ -94,43 +90,58 @@ int main(){
     container_t* container = fillcontainer(stringnum , f);
     int frk = 1;
     for (int i = 0; i < stringnum; i++) {
-		if (frk == 0) {
-			kill(getpid(), SIGKILL);
-		}
+		//if (frk == 0) {
+		//	kill(getpid(), SIGKILL);
+		//}
 		if (frk != 0) {
 			frk = fork();
 			if (frk == 0)
 			{
-				frk = fork();
-				if (frk != 0) {
-					t = time(NULL);
+				int frk1 = fork();
+				int status = 1;
+				if (frk1 != 0) {
+					//t = time(NULL);
 					for (;;)
 					{
+						//printf("time = %d\n" , time(NULL));
 						if (abs(time(NULL) - t) > 5)
 						{
-							kill(frk, SIGKILL);
+							int status = 0;
+							int stat = waitpid(frk1, &status, WNOHANG);
+							int DIE = 1;
+							DIE = kill(frk1, SIGTERM);
+							//printf("DIE = %d\n", DIE);						
+							DIE = kill(frk1, SIGKILL);						
+							if (stat == 0) {
 							printf("PROCESS %d TERMINATED\n", i);
-							kill(getpid(), SIGKILL);
+							}
+							//exit(0);
+							//printf("dead %d\n", DIE);
+							exit(0);
+							//kill(getpid(), SIGKILL);
 						}
 					}
 				}
-				//pid = getpid();
-					//printf("forked\n");
-				if (frk == 0)
-				{
+				if (frk1 == 0 && status == 1)
+				{	
+					status = 0;
 					sleep(container[i].args[0][0] - '0');
-					execvp(container[i].args[1], container[i].args + 1);
+					status = execvp(container[i].args[1], container[i].args + 1);
 					//kill(frk, SIGKILL);
-					frk = 0;
-					kill(getppid(), SIGKILL);
-					kill(getpid(), SIGKILL);
+					frk1 = 0;
+					//kill(getppid(), SIGKILL);
+					printf("error\n");
+					exit(0);
 				}
+				if (frk1 == 0)
+					exit(0);
 			}
 		}
     }
+    exit(0);
     for(int i = 0; i <= container[stringnum - 1].argnum; i++){
     }
-    if (frk > 0){
+    /*if (frk > 0){
         wait(NULL);
         sleep(container[stringnum - 1].waittime);
         if (abs(time(NULL) - t) > 5){
@@ -138,7 +149,7 @@ int main(){
             kill(getpid(), SIGKILL);
         }
         execvp(container[stringnum - 1].args[1], container[stringnum - 1].args + 1);
-    }
+    }*/
     fclose(f);
 }
 int getargnum(char* string){
