@@ -110,15 +110,47 @@ int main(){
 	if (frk == 0){
 	kill(getpid(), SIGKILL);
 	}
-	printf("arg = %s\n", container[i].args[1]);
+	//printf("arg = %s\n", container[i].args[1]);
+	//int pid = 0;
 	if (frk != 0) {
-		wait(NULL);
+		//t = time(NULL);
+		frk = fork();
+		if (frk == 0)
+		{
 		frk = fork();
 		if (frk == 0){
-			execvp(container[i].args[1], container[i].args + 1);
-			kill(getpid(), SIGKILL);
+			int pid = getppid();
+			t = time(NULL);
+			for (;;)
+			{
+				if (abs(time(NULL) - t) > 5)
+				{
+					kill(pid, SIGKILL);
+					printf("PROCESS %d TERMINATED\n", i);
+					kill(getpid(), SIGKILL);			
+				}			
+			}
+		}
+		//pid = getpid();
+			//printf("forked\n");
+		if (frk != 0) 
+		{
+				sleep(container[i].args[0][0] -'0');
+				execvp(container[i].args[1], container[i].args + 1);	
+				kill(frk, SIGKILL);
+				frk = 0;
+				kill(getpid(), SIGKILL);
+		}
 		}	
 	}
+	/*if (frk != 0) {
+		if (abs(time(NULL) - t) > 1) {
+			if (pid != 0) {
+				kill(pid, SIGKILL);
+				printf("process was terminated");		
+			}	
+		}
+	}*/
     }
     for(int i = 0; i <= container[stringnum - 1].argnum; i++){
     }
@@ -177,9 +209,9 @@ container_t* fillcontainer(int stringnum , FILE* f){
         container[i].commandline = (char*) calloc (N, sizeof(char));
         fgets(container[i].commandline, N, f);
         //container[i].args = makeargarr(container[i].commandline);
-	container[i].args = betterparse(container[i].commandline);
+	//container[i].args = betterparse(container[i].commandline);
 	int trash = 0;
-	//container[i].args = Split(container[i].commandline, " ", &trash);
+	container[i].args = Split(container[i].commandline, " \n", &trash);
         container[i].argnum = getargnum(container[i].commandline);
         container[i].waittime = (int)(container[i].commandline[0] - '0');
     }
