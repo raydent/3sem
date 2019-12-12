@@ -18,6 +18,70 @@ typedef struct mystruct {
 int getargnum(char* string);
 char** makeargarr(char* string);
 container_t* fillcontainer(int stringnum , FILE* f);
+char ** betterparse(char* string)
+{
+	int l = 0;
+	int k = 0;
+	int check = 0;
+	char** result = (char**) calloc (100, sizeof(char*));
+	for (int i = 0; i < 100; i++)
+	{
+	result[i] = (char*) calloc (100, sizeof(char)); 
+	}
+	for(;;)
+        {
+            for(int j = 0;;j++)
+            {
+                //fscanf(rFile, "%c", &Exe[i].command[k][j]);
+		result[k][j] = string[l];
+		l++;
+                if (result[k][j] == ' ' && j == 0)
+                {
+                    j--;
+                    continue;
+                }
+
+                if (result[k][j] == ' ')
+                {
+                    result[k][j] = '\0';
+                    k++;
+                    break;
+                }
+                else if (result[k][j] == '\n')
+                {
+                    result[k][j] = '\0';
+                    result[k + 1] = (char *)0;
+                    check = 1;
+                    break;
+                }
+            }
+            if (check)
+                break;
+        }
+	return result;
+}
+char** Split(char* string, char* delimiters, int* tokensCount){
+  int count = 10;
+  char** tokens = (char**) calloc (count, sizeof(char*));
+  printf("0\n");
+  char *substring = strtok (string, delimiters);
+  tokens[0] = substring;
+  if (tokens[0] == NULL){
+    return tokens;
+  }
+  *tokensCount += 1;
+  while(substring != NULL){
+    printf("1\n");
+    substring = strtok(NULL, delimiters);
+    tokens[*tokensCount] = substring;
+    *tokensCount += 1;
+    if(*tokensCount == count - 1){
+      count *= 2;
+      tokens = realloc(tokens, count * (sizeof(char*)));
+    }
+  }
+  return tokens;
+}
 
 int main(){
     time_t t = time(NULL);
@@ -29,16 +93,32 @@ int main(){
     //stringnum = (buf[0] - 9);
     container_t* container = fillcontainer(stringnum , f);
     int frk = 1;
-    for(int i = 0; i < stringnum - 1; i++){
-        frk = fork();
-        if (frk == 0){
-            sleep(container[i].waittime);
-            if (abs(time(NULL) - t) > 5){
-                printf("process number %d was terminated\n", i);
-                kill(getpid(), SIGKILL);
-            }
-            execvp(container[i].args[1], container[i].args + 1);
-        }
+    for(int i = 0; i < stringnum; i++){
+	//if (frk != 0){
+        //	frk = fork();
+	//}
+        //if (frk == 0){
+            //sleep(container[i].waittime);
+            //if (abs(time(NULL) - t) > 5){
+              //  printf("process number %d was terminated\n", i);
+                //kill(getpid(), SIGKILL);
+            //}
+	    //char** arr = &container[i].args[1];
+           // execvp(container[i].args[1], container[i].args + 1);
+	   // execvp(arr[0], arr);
+        //}
+	if (frk == 0){
+	kill(getpid(), SIGKILL);
+	}
+	printf("arg = %s\n", container[i].args[1]);
+	if (frk != 0) {
+		wait(NULL);
+		frk = fork();
+		if (frk == 0){
+			execvp(container[i].args[1], container[i].args + 1);
+			kill(getpid(), SIGKILL);
+		}	
+	}
     }
     for(int i = 0; i <= container[stringnum - 1].argnum; i++){
     }
@@ -78,6 +158,10 @@ char** makeargarr(char* string){
         }
         argarr[i] = (char*) calloc (p2 - p1, sizeof(char));
         strncpy(argarr[i], p1, p2 - p1);
+	if (strcmp(argarr[i], "\n") == 0)
+	{
+		argarr[i] = NULL;
+	}
         p2++;
         if(p2 == NULL)
             break;
@@ -92,7 +176,10 @@ container_t* fillcontainer(int stringnum , FILE* f){
     for(int i = 0; i < stringnum; i++){
         container[i].commandline = (char*) calloc (N, sizeof(char));
         fgets(container[i].commandline, N, f);
-        container[i].args = makeargarr(container[i].commandline);
+        //container[i].args = makeargarr(container[i].commandline);
+	container[i].args = betterparse(container[i].commandline);
+	int trash = 0;
+	//container[i].args = Split(container[i].commandline, " ", &trash);
         container[i].argnum = getargnum(container[i].commandline);
         container[i].waittime = (int)(container[i].commandline[0] - '0');
     }
