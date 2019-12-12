@@ -93,64 +93,40 @@ int main(){
     //stringnum = (buf[0] - 9);
     container_t* container = fillcontainer(stringnum , f);
     int frk = 1;
-    for(int i = 0; i < stringnum; i++){
-	//if (frk != 0){
-        //	frk = fork();
-	//}
-        //if (frk == 0){
-            //sleep(container[i].waittime);
-            //if (abs(time(NULL) - t) > 5){
-              //  printf("process number %d was terminated\n", i);
-                //kill(getpid(), SIGKILL);
-            //}
-	    //char** arr = &container[i].args[1];
-           // execvp(container[i].args[1], container[i].args + 1);
-	   // execvp(arr[0], arr);
-        //}
-	if (frk == 0){
-	kill(getpid(), SIGKILL);
-	}
-	//printf("arg = %s\n", container[i].args[1]);
-	//int pid = 0;
-	if (frk != 0) {
-		//t = time(NULL);
-		frk = fork();
-		if (frk == 0)
-		{
-		frk = fork();
-		if (frk == 0){
-			int pid = getppid();
-			t = time(NULL);
-			for (;;)
+    for (int i = 0; i < stringnum; i++) {
+		if (frk == 0) {
+			kill(getpid(), SIGKILL);
+		}
+		if (frk != 0) {
+			frk = fork();
+			if (frk == 0)
 			{
-				if (abs(time(NULL) - t) > 5)
+				frk = fork();
+				if (frk != 0) {
+					t = time(NULL);
+					for (;;)
+					{
+						if (abs(time(NULL) - t) > 5)
+						{
+							kill(frk, SIGKILL);
+							printf("PROCESS %d TERMINATED\n", i);
+							kill(getpid(), SIGKILL);
+						}
+					}
+				}
+				//pid = getpid();
+					//printf("forked\n");
+				if (frk == 0)
 				{
-					kill(pid, SIGKILL);
-					printf("PROCESS %d TERMINATED\n", i);
-					kill(getpid(), SIGKILL);			
-				}			
+					sleep(container[i].args[0][0] - '0');
+					execvp(container[i].args[1], container[i].args + 1);
+					//kill(frk, SIGKILL);
+					frk = 0;
+					kill(getppid(), SIGKILL);
+					kill(getpid(), SIGKILL);
+				}
 			}
 		}
-		//pid = getpid();
-			//printf("forked\n");
-		if (frk != 0) 
-		{
-				sleep(container[i].args[0][0] -'0');
-				execvp(container[i].args[1], container[i].args + 1);	
-				kill(frk, SIGKILL);
-				frk = 0;
-				kill(getpid(), SIGKILL);
-		}
-		}	
-	}
-	/*if (frk != 0) {
-		if (abs(time(NULL) - t) > 1) {
-			if (pid != 0) {
-				kill(pid, SIGKILL);
-				printf("process was terminated");		
-			}	
-		}
-	}*/
     }
     for(int i = 0; i <= container[stringnum - 1].argnum; i++){
     }
